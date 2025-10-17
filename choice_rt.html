@@ -84,9 +84,10 @@
                       'ALTERNATING TRIALS:\n' +
                       'You will see a colored cue (red or blue) indicating which button to press.\n' +
                       'When the center box turns that color and says "Go!", press the corresponding button.\n\n' +
-                      'Use LEFT ARROW or Z for RED (left)\n' +
-                      'Use RIGHT ARROW or / for BLUE (right)\n\n' +
-                      'Click the center box to begin each trial.');
+                      'RESPONSES:\n' +
+                      'RED (left): LEFT ARROW, Z key, or LEFT mouse button\n' +
+                      'BLUE (right): RIGHT ARROW, / key, or RIGHT mouse button\n\n' +
+                      'START TRIAL: Click center box or press SPACEBAR');
                 showInitialMessage = false;
             }
         }
@@ -141,7 +142,7 @@
             noStroke();
             textSize(24);
             if (taskState === WAITING && leftRight === LEFT) {
-                text("Left", 150, buttonY + 75);
+                text("Left\n(← or Z)", 150, buttonY + 75);
             } else if (trialNum > trialsPerHalf) {
                 text("Left\n(← or Z)", 150, buttonY + 75);
             }
@@ -166,7 +167,7 @@
             noStroke();
             textSize(24);
             if (taskState === WAITING && leftRight === RIGHT) {
-                text("Right", 450, buttonY + 75);
+                text("Right\n(→ or /)", 450, buttonY + 75);
             } else if (trialNum > trialsPerHalf) {
                 text("Right\n(→ or /)", 450, buttonY + 75);
             }
@@ -202,7 +203,7 @@
             let displayText = "";
             
             if (taskState === PRETASK) {
-                displayText = "Click to start trial";
+                displayText = "Click or press SPACE to start";
             } else if (taskState === WAITING) {
                 displayText = "Wait...";
             } else if (taskState === RT) {
@@ -253,7 +254,7 @@
                             rtRand.push(responseTime);
                         }
                         
-                        keyResponse = responseTime + " ms\nClick for next trial";
+                        keyResponse = responseTime + " ms\nClick or press SPACE for next trial";
                         trialNum++;
                         
                         // Check if transitioning to random trials
@@ -262,8 +263,8 @@
                                 alert('RANDOM TRIALS:\n\n' +
                                       'Now you will NOT see a colored cue beforehand.\n' +
                                       'Wait for the center box to turn RED or BLUE, then respond quickly!\n\n' +
-                                      'RED = Press LEFT ARROW or Z\n' +
-                                      'BLUE = Press RIGHT ARROW or /\n\n' +
+                                      'RED: LEFT ARROW, Z, or LEFT mouse button\n' +
+                                      'BLUE: RIGHT ARROW, /, or RIGHT mouse button\n\n' +
                                       'The first few trials are practice and won\'t be counted.');
                             }, 100);
                         }
@@ -325,10 +326,23 @@
                     mouseY > boxY && mouseY < boxY + boxHeight) {
                     startTrial();
                 }
+            } else if (taskState === RT || (taskState === WAITING && millis() > trialStartTime + 100)) {
+                // Mouse button responses during RT period
+                if (mouseButton === LEFT) {
+                    leftPressed = true;
+                } else if (mouseButton === RIGHT) {
+                    rightPressed = true;
+                }
             }
         }
         
         function keyPressed() {
+            // Spacebar to start trial
+            if ((taskState === PRETASK || taskState === DISPLAY) && key === ' ') {
+                startTrial();
+                return false;
+            }
+            
             // Left responses: LEFT_ARROW or 'z'
             if (keyCode === LEFT_ARROW || key === 'z' || key === 'Z') {
                 leftPressed = true;

@@ -112,7 +112,7 @@
             
             // Show initial instructions
             if (showInitialMessage) {
-                alert('Welcome to the Choice Reaction Time Experiment! (ver 0.51)\n\n' +
+                alert('Welcome to the Choice Reaction Time Experiment! (ver 0.55)\n\n' +
                       'ALTERNATING TRIALS:\n' +
                       'You will see a colored cue (red or blue) indicating which button to press.\n' +
                       'When the center box turns that color and says "Go!", press the corresponding button.\n\n' +
@@ -257,7 +257,7 @@
                 } else if (currentTime > trialStartTime + 100) {
                     // Check for early response
                     if (leftPressed || rightPressed) {
-                        responseTime = currentTime - startTime;
+                        responseTime = round(currentTime - startTime);
                         keyResponse = "Too early.\nClick for next trial";
                         leftPressed = false;
                         rightPressed = false;
@@ -267,7 +267,7 @@
             } else if (taskState === RT) {
                 // Check for response
                 if (leftPressed || rightPressed) {
-                    responseTime = currentTime - startTime;
+                    responseTime = round(currentTime - startTime);
                     
                     // Check if correct button
                     let correctResponse = (leftRight === LEFT && leftPressed) || 

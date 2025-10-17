@@ -112,7 +112,7 @@
             
             // Show initial instructions
             if (showInitialMessage) {
-                alert('Welcome to the Choice Reaction Time Experiment! (ver 0.5)\n\n' +
+                alert('Welcome to the Choice Reaction Time Experiment!\n\n' +
                       'ALTERNATING TRIALS:\n' +
                       'You will see a colored cue (red or blue) indicating which button to press.\n' +
                       'When the center box turns that color and says "Go!", press the corresponding button.\n\n' +
@@ -241,7 +241,7 @@
             } else if (taskState === RT) {
                 displayText = "Go!";
             } else if (taskState === DISPLAY) {
-                displayText = ;
+                displayText = keyResponse;
             }
             
             text(displayText, width/2, boxY + boxHeight/2);
@@ -286,7 +286,7 @@
                             rtRand.push(responseTime);
                         }
                         
-                        keyResponse = Math.round(responseTime) + " ms\nClick or press SPACE for next trial";
+                        keyResponse = responseTime + " ms\nClick or press SPACE for next trial";
                         trialNum++;
                         
                         // Check if transitioning to random trials

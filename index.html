@@ -80,7 +80,7 @@
             
             // Show initial instructions
             if (showInitialMessage) {
-                alert('Welcome to the Choice Reaction Time Experiment!\n\n' +
+                alert('Welcome to the Choice Reaction Time Experiment! (version 0.4)\n\n' +
                       'ALTERNATING TRIALS:\n' +
                       'You will see a colored cue (red or blue) indicating which button to press.\n' +
                       'When the center box turns that color and says "Go!", press the corresponding button.\n\n' +
@@ -316,7 +316,7 @@
         
         function mousePressed() {
             if (taskState === PRETASK || taskState === DISPLAY) {
-                // Check if clicked in response box area
+                // Check if clicked in response box area to start trial
                 let boxX = 50;
                 let boxY = 320;
                 let boxWidth = 500;
@@ -327,13 +327,19 @@
                     startTrial();
                 }
             } else if (taskState === RT || (taskState === WAITING && millis() > trialStartTime + 100)) {
-                // Mouse button responses during RT period
+                // Mouse button responses during RT period or early response detection
                 if (mouseButton === LEFT) {
                     leftPressed = true;
                 } else if (mouseButton === RIGHT) {
                     rightPressed = true;
+                } else if (mouseButton === CENTER) {
+                    // Some browsers report left as CENTER, try this too
+                    leftPressed = true;
                 }
             }
+            
+            // Prevent default to avoid any browser context menus
+            return false;
         }
         
         function keyPressed() {

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choice Reaction Time Experiment</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #canvas-container {
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <script>
+        // Constants for task states
+        const PRETASK = 0;
+        const WAITING = 1;
+        const RT = 2;
+        const DISPLAY = 3;
+        const SAVE = 4;
+        const DONE = 5;
+        
+        const LEFT = 0;
+        const RIGHT = 1;
+        
+        // Timing parameters (in milliseconds)
+        const minWait = 1000;
+        const maxWait = 3000;
+        
+        // Trial parameters
+        const practiceTrials = 2;
+        const trialsPerHalf = 50;
+        const randomPracticeTrials = 3; // throwaway trials at start of random block
+        
+        // State variables
+        let taskState = PRETASK;
+        let trialNum = 1 - practiceTrials;
+        let leftRight = LEFT;
+        let startTime = 0;
+        let trialStartTime = 0;
+        let responseTime = 0;
+        
+        // Data storage
+        let rtAlt = [];
+        let rtRand = [];
+        
+        // Response tracking
+        let leftPressed = false;
+        let rightPressed = false;
+        let keyResponse = '';
+        
+        // UI elements
+        let responseBox;
+        let leftButton;
+        let rightButton;
+        let instructText;
+        
+        let showInitialMessage = true;
+        
+        function setup() {
+            let canvas = createCanvas(600, 500);
+            canvas.parent('canvas-container');
+            textAlign(CENTER, CENTER);
+            textSize(24);
+            
+            // Show initial instructions
+            if (showInitialMessage) {
+                alert('Welcome to the Choice Reaction Time Experiment!\n\n' +
+                      'ALTERNATING TRIALS:\n' +
+                      'You will see a colored cue (red or blue) indicating which button to press.\n' +
+                      'When the center box turns that color and says "Go!", press the corresponding button.\n\n' +
+                      'Use LEFT ARROW or Z for RED (left)\n' +
+                      'Use RIGHT ARROW or / for BLUE (right)\n\n' +
+                      'Click the center box to begin each trial.');
+                showInitialMessage = false;
+            }
+        }
+        
+        function draw() {
+            background(240);
+            
+            // Draw instruction text at top
+            fill(0);
+            textSize(20);
+            if (trialNum <= trialsPerHalf) {
+                instructText = "Alternating left/right";
+            } else if (trialNum <= trialsPerHalf + randomPracticeTrials) {
+                instructText = "Random (practice)";
+            } else {
+                instructText = "Random";
+            }
+            text(instructText, width/2, 40);
+            
+            // Draw left and right buttons
+            drawSideButtons();
+            
+            // Draw center response box
+            drawResponseBox();
+            
+            // Handle state machine
+            updateTaskState();
+        }
+        
+        function drawSideButtons() {
+            let buttonWidth = 200;
+            let buttonHeight = 150;
+            let buttonY = 120;
+            
+            // Left button (red)
+            if (taskState === WAITING && leftRight === LEFT) {
+                fill(255, 0, 0);
+                stroke(0);
+                strokeWeight(4);
+            } else if (trialNum > trialsPerHalf) {
+                fill(255, 0, 0);
+                stroke(200);
+                strokeWeight(2);
+            } else {
+                fill(200);
+                stroke(200);
+                strokeWeight(2);
+            }
+            rect(50, buttonY, buttonWidth, buttonHeight, 10);
+            
+            fill(0);
+            noStroke();
+            textSize(24);
+            if (taskState === WAITING && leftRight === LEFT) {
+                text("Left", 150, buttonY + 75);
+            } else if (trialNum > trialsPerHalf) {
+                text("Left\n(← or Z)", 150, buttonY + 75);
+            }
+            
+            // Right button (blue)
+            if (taskState === WAITING && leftRight === RIGHT) {
+                fill(0, 0, 255);
+                stroke(0);
+                strokeWeight(4);
+            } else if (trialNum > trialsPerHalf) {
+                fill(0, 0, 255);
+                stroke(200);
+                strokeWeight(2);
+            } else {
+                fill(200);
+                stroke(200);
+                strokeWeight(2);
+            }
+            rect(350, buttonY, buttonWidth, buttonHeight, 10);
+            
+            fill(0);
+            noStroke();
+            textSize(24);
+            if (taskState === WAITING && leftRight === RIGHT) {
+                text("Right", 450, buttonY + 75);
+            } else if (trialNum > trialsPerHalf) {
+                text("Right\n(→ or /)", 450, buttonY + 75);
+            }
+        }
+        
+        function drawResponseBox() {
+            let boxWidth = 500;
+            let boxHeight = 120;
+            let boxX = (width - boxWidth) / 2;
+            let boxY = 320;
+            
+            // Set color based on state
+            if (taskState === PRETASK || taskState === DISPLAY) {
+                fill(200);
+            } else if (taskState === WAITING) {
+                fill(220);
+            } else if (taskState === RT) {
+                if (leftRight === LEFT) {
+                    fill(255, 0, 0);
+                } else {
+                    fill(0, 0, 255);
+                }
+            }
+            
+            stroke(0);
+            strokeWeight(3);
+            rect(boxX, boxY, boxWidth, boxHeight, 10);
+            
+            // Display text
+            fill(0);
+            noStroke();
+            textSize(28);
+            let displayText = "";
+            
+            if (taskState === PRETASK) {
+                displayText = "Click to start trial";
+            } else if (taskState === WAITING) {
+                displayText = "Wait...";
+            } else if (taskState === RT) {
+                displayText = "Go!";
+            } else if (taskState === DISPLAY) {
+                displayText = keyResponse;
+            }
+            
+            text(displayText, width/2, boxY + boxHeight/2);
+        }
+        
+        function updateTaskState() {
+            let currentTime = millis();
+            
+            if (taskState === WAITING) {
+                // Check if it's time to show "Go!"
+                if (currentTime >= startTime) {
+                    taskState = RT;
+                } else if (currentTime > trialStartTime + 100) {
+                    // Check for early response
+                    if (leftPressed || rightPressed) {
+                        responseTime = currentTime - startTime;
+                        keyResponse = "Too early.\nClick for next trial";
+                        leftPressed = false;
+                        rightPressed = false;
+                        taskState = DISPLAY;
+                    }
+                }
+            } else if (taskState === RT) {
+                // Check for response
+                if (leftPressed || rightPressed) {
+                    responseTime = currentTime - startTime;
+                    
+                    // Check if correct button
+                    let correctResponse = (leftRight === LEFT && leftPressed) || 
+                                        (leftRight === RIGHT && rightPressed);
+                    let wrongResponse = (leftRight === LEFT && rightPressed) || 
+                                       (leftRight === RIGHT && leftPressed);
+                    
+                    if (wrongResponse) {
+                        keyResponse = "Wrong button.\nClick for next trial";
+                        taskState = DISPLAY;
+                    } else if (correctResponse) {
+                        // Store data (excluding practice trials and random practice trials)
+                        if (trialNum > 0 && trialNum <= trialsPerHalf) {
+                            rtAlt.push(responseTime);
+                        } else if (trialNum > trialsPerHalf + randomPracticeTrials) {
+                            rtRand.push(responseTime);
+                        }
+                        
+                        keyResponse = responseTime + " ms\nClick for next trial";
+                        trialNum++;
+                        
+                        // Check if transitioning to random trials
+                        if (trialNum === trialsPerHalf + 1) {
+                            setTimeout(() => {
+                                alert('RANDOM TRIALS:\n\n' +
+                                      'Now you will NOT see a colored cue beforehand.\n' +
+                                      'Wait for the center box to turn RED or BLUE, then respond quickly!\n\n' +
+                                      'RED = Press LEFT ARROW or Z\n' +
+                                      'BLUE = Press RIGHT ARROW or /\n\n' +
+                                      'The first few trials are practice and won\'t be counted.');
+                            }, 100);
+                        }
+                        
+                        // Check if experiment is complete
+                        if (trialNum > trialsPerHalf + randomPracticeTrials + trialsPerHalf) {
+                            taskState = SAVE;
+                            setTimeout(saveData, 500);
+                            return;
+                        }
+                        
+                        taskState = DISPLAY;
+                    }
+                    
+                    leftPressed = false;
+                    rightPressed = false;
+                }
+            } else if (taskState === DISPLAY) {
+                // Wait for minimum display time before allowing next trial
+                if (currentTime > startTime + responseTime + 500) {
+                    // Response handled in mousePressed
+                }
+            }
+        }
+        
+        function startTrial() {
+            taskState = WAITING;
+            leftPressed = false;
+            rightPressed = false;
+            keyResponse = "";
+            
+            // Determine which side for this trial
+            if (trialNum <= trialsPerHalf) {
+                // Alternating trials
+                if ((trialNum + 100) % 2 === 1) {
+                    leftRight = LEFT;
+                } else {
+                    leftRight = RIGHT;
+                }
+            } else {
+                // Random trials
+                leftRight = random() > 0.5 ? LEFT : RIGHT;
+            }
+            
+            // Set timing
+            trialStartTime = millis();
+            startTime = trialStartTime + random(minWait, maxWait);
+        }
+        
+        function mousePressed() {
+            if (taskState === PRETASK || taskState === DISPLAY) {
+                // Check if clicked in response box area
+                let boxX = 50;
+                let boxY = 320;
+                let boxWidth = 500;
+                let boxHeight = 120;
+                
+                if (mouseX > boxX && mouseX < boxX + boxWidth &&
+                    mouseY > boxY && mouseY < boxY + boxHeight) {
+                    startTrial();
+                }
+            }
+        }
+        
+        function keyPressed() {
+            // Left responses: LEFT_ARROW or 'z'
+            if (keyCode === LEFT_ARROW || key === 'z' || key === 'Z') {
+                leftPressed = true;
+            }
+            // Right responses: RIGHT_ARROW or '/'
+            else if (keyCode === RIGHT_ARROW || key === '/' || key === '?') {
+                rightPressed = true;
+            }
+            
+            return false; // Prevent default behavior
+        }
+        
+        function saveData() {
+            // Create CSV content
+            let csv = "Alternating,Random\n";
+            let maxLength = Math.max(rtAlt.length, rtRand.length);
+            
+            for (let i = 0; i < maxLength; i++) {
+                let altValue = i < rtAlt.length ? rtAlt[i] : '';
+                let randValue = i < rtRand.length ? rtRand[i] : '';
+                csv += altValue + "," + randValue + "\n";
+            }
+            
+            // Create download
+            let blob = new Blob([csv], { type: 'text/csv' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'reaction_time_data.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // Show completion message
+            taskState = DONE;
+            background(240);
+            fill(0);
+            textSize(32);
+            text("Experiment Complete!", width/2, height/2 - 40);
+            textSize(20);
+            text("Data has been downloaded.", width/2, height/2 + 20);
+            text("You may close this window.", width/2, height/2 + 60);
+        }
+    </script>
+</body>
+</html>

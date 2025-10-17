@@ -81,9 +81,38 @@
             // Prevent right-click context menu
             canvas.elt.addEventListener('contextmenu', (e) => e.preventDefault());
             
+            // Add mouse button event listeners directly
+            canvas.elt.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                
+                // Check if in response box for starting trial
+                if (taskState === PRETASK || taskState === DISPLAY) {
+                    let boxX = 50;
+                    let boxY = 320;
+                    let boxWidth = 500;
+                    let boxHeight = 120;
+                    let rect = canvas.elt.getBoundingClientRect();
+                    let mx = e.clientX - rect.left;
+                    let my = e.clientY - rect.top;
+                    
+                    if (mx > boxX && mx < boxX + boxWidth &&
+                        my > boxY && my < boxY + boxHeight) {
+                        startTrial();
+                    }
+                } 
+                // Handle responses during RT or early response detection
+                else if (taskState === RT || (taskState === WAITING && millis() > trialStartTime + 100)) {
+                    if (e.button === 0) { // Left mouse button
+                        leftPressed = true;
+                    } else if (e.button === 2) { // Right mouse button
+                        rightPressed = true;
+                    }
+                }
+            });
+            
             // Show initial instructions
             if (showInitialMessage) {
-                alert('Welcome to the Choice Reaction Time Experiment! (v 0.41)\n\n' +
+                alert('Welcome to the Choice Reaction Time Experiment! (ver 0.5)\n\n' +
                       'ALTERNATING TRIALS:\n' +
                       'You will see a colored cue (red or blue) indicating which button to press.\n' +
                       'When the center box turns that color and says "Go!", press the corresponding button.\n\n' +
@@ -212,7 +241,7 @@
             } else if (taskState === RT) {
                 displayText = "Go!";
             } else if (taskState === DISPLAY) {
-                displayText = keyResponse;
+                displayText = ;
             }
             
             text(displayText, width/2, boxY + boxHeight/2);
@@ -257,7 +286,7 @@
                             rtRand.push(responseTime);
                         }
                         
-                        keyResponse = responseTime + " ms\nClick or press SPACE for next trial";
+                        keyResponse = Math.round(responseTime) + " ms\nClick or press SPACE for next trial";
                         trialNum++;
                         
                         // Check if transitioning to random trials
@@ -315,47 +344,6 @@
             // Set timing
             trialStartTime = millis();
             startTime = trialStartTime + random(minWait, maxWait);
-        }
-        
-        function mousePressed() {
-            // Prevent context menu
-            if (mouseButton === RIGHT) {
-                return false;
-            }
-            
-            if (taskState === PRETASK || taskState === DISPLAY) {
-                // Check if clicked in response box area to start trial
-                let boxX = 50;
-                let boxY = 320;
-                let boxWidth = 500;
-                let boxHeight = 120;
-                
-                if (mouseX > boxX && mouseX < boxX + boxWidth &&
-                    mouseY > boxY && mouseY < boxY + boxHeight) {
-                    startTrial();
-                }
-            } else if (taskState === RT || (taskState === WAITING && millis() > trialStartTime + 100)) {
-                // Mouse button responses - set the flags that will be checked in updateTaskState
-                if (mouseButton === LEFT) {
-                    leftPressed = true;
-                } else if (mouseButton === RIGHT) {
-                    rightPressed = true;
-                }
-            }
-            
-            return false;
-        }
-        
-        function mouseReleased() {
-            // Also try capturing on release as backup
-            if (taskState === RT || (taskState === WAITING && millis() > trialStartTime + 100)) {
-                if (mouseButton === LEFT) {
-                    leftPressed = true;
-                } else if (mouseButton === RIGHT) {
-                    rightPressed = true;
-                }
-            }
-            return false;
         }
         
         function keyPressed() {

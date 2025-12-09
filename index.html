@@ -43,9 +43,9 @@
         const maxWait = 3000;
         
         // Trial parameters
-        const practiceTrials = 2;
-        const trialsPerHalf = 5;
-        const randomPracticeTrials = 3; // throwaway trials at start of random block
+        const practiceTrials = 5;
+        const trialsPerHalf = 25;
+        const randomPracticeTrials = 5; // throwaway trials at start of random block
         
         // State variables
         let taskState = PRETASK;
@@ -112,7 +112,7 @@
             
             // Show initial instructions
             if (showInitialMessage) {
-                alert('Welcome to the Choice Reaction Time Experiment! (ver 0.60)\n\n' +
+                alert('Welcome to the Choice Reaction Time Experiment! (ver 0.61)\n\n' +
                       'ALTERNATING TRIALS:\n' +
                       'You will see a colored cue (red or blue) indicating which button to press.\n' +
                       'When the center box turns that color and says "Go!", press the corresponding button.\n\n' +
